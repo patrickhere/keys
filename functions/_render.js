@@ -164,7 +164,7 @@ export function htmlHeaders() {
     "content-type": "text/html; charset=utf-8",
     "cache-control": "public, max-age=300",
     "content-security-policy":
-      "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'",
+      "default-src 'none'; style-src 'self'; script-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'",
     ...SEC_HEADERS,
   };
 }
@@ -173,63 +173,7 @@ export function textHeaders(ct) {
   return { "content-type": ct, "cache-control": "public, max-age=300", ...SEC_HEADERS };
 }
 
-const STYLE = `
-:root{color-scheme:dark light}
-*{box-sizing:border-box}
-body{margin:0;font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  background:#0c0e12;color:#e6e6e6;-webkit-font-smoothing:antialiased}
-.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace}
-.wrap{max-width:760px;margin:0 auto;padding:56px 20px 80px}
-header{display:flex;align-items:center;gap:16px;margin-bottom:8px}
-.avatar{width:56px;height:56px;border-radius:14px;flex:none;display:grid;place-items:center;
-  background:linear-gradient(135deg,#f0883e,#c2410c);color:#1a1200;font-weight:700;font-size:24px}
-h1{font-size:24px;margin:0;letter-spacing:-.01em}
-.handle{color:#8a94a6;font-size:14px;margin-top:2px}
-.tagline{color:#f0883e;font-size:13px;text-transform:lowercase;letter-spacing:.04em;margin-top:2px}
-.count{color:#8a94a6;font-size:13px;margin:28px 0 12px}
-.card{background:#14171d;border:1px solid #232830;border-radius:12px;padding:16px 18px;margin-bottom:12px}
-.card .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.badge{font-size:12px;font-weight:600;color:#f0883e;background:#2a1a10;border:1px solid #452612;
-  padding:2px 9px;border-radius:999px}
-.klabel{font-weight:600}
-.kmeta{color:#6b7484;font-size:12.5px;margin-left:auto}
-.fp{color:#a9b3c4;font-size:12.5px;word-break:break-all}
-.fp b{color:#e6e6e6;font-weight:600}
-.comment{color:#6b7484;font-size:12.5px;margin-top:4px}
-.body{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-top:12px}
-.kinfo{flex:1 1 300px;min-width:0}
-.randomart{font-size:10.5px;line-height:1.15;color:#6b7484;margin:0;white-space:pre;flex:0 0 auto;
-  background:#0a0c10;border:1px solid #232830;border-radius:8px;padding:8px 10px}
-.qr{width:104px;height:104px;flex:none;background:#fff;border-radius:8px;padding:6px}
-.qr svg{display:block;width:100%;height:100%}
-.keyactions{margin-top:16px}
-.mini{background:#1c2129;border:1px solid #2e3542;color:#a9b3c4;border-radius:6px;
-  padding:4px 10px;font-size:11.5px;cursor:pointer}
-.mini:hover{color:#fff;border-color:#f0883e}
-.mini.ok{color:#6ee787;border-color:#6ee787}
-.usage{margin-top:32px;background:#0f1319;border:1px solid #232830;border-radius:12px;padding:18px}
-.usage h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#8a94a6;margin:0 0 6px}
-.usage p{color:#6b7484;font-size:12.5px;margin:0 0 12px}
-.cmd{position:relative;background:#0a0c10;border:1px solid #232830;border-radius:8px;
-  padding:12px 60px 12px 14px;font-size:12.5px;color:#cdd5e0;overflow-x:auto;margin-bottom:10px}
-.cmd:last-child{margin-bottom:0}
-.copy{position:absolute;top:8px;right:8px;background:#1c2129;border:1px solid #2e3542;color:#a9b3c4;
-  border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer}
-.copy:hover{color:#fff;border-color:#f0883e}
-.copy.ok{color:#6ee787;border-color:#6ee787}
-footer{margin-top:44px;color:#4a515e;font-size:12px}
-a{color:#f0883e}
-@media(prefers-color-scheme:light){
-  body{background:#f7f8fa;color:#1a1d23}
-  .card{background:#fff;border-color:#e4e7ec}
-  .usage{background:#fff;border-color:#e4e7ec}
-  .cmd,.randomart{background:#f2f3f6;border-color:#e4e7ec;color:#333}
-  .randomart{color:#5b6473}
-  .handle,.kmeta,.comment,.count,.usage p{color:#6b7484}
-  .fp{color:#3a4150}.fp b{color:#1a1d23}
-  .copy,.mini{background:#eef0f3;border-color:#d8dce2}
-}
-`;
+const SPARK = `<svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0l2.1 9.9L24 12l-9.9 2.1L12 24l-2.1-9.9L0 12l9.9-2.1z" fill="#ff6a1f"/></svg>`;
 
 const COPY_JS = `
 document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{
@@ -240,31 +184,24 @@ document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',(
 }));
 `;
 
-// qrSvg is injected by the caller (built in [handle].js from _qr.js) so this module
-// stays dependency-light; pass "" to omit.
-export async function renderIdentity(identity, origin, qrSvg = "") {
+// hart forge design system (workshop). styling is served from /hartforge.css.
+export async function renderIdentity(identity, origin) {
   const url = `${origin}/${identity.handle}`;
-  const keyCards = await Promise.all(
+  const keyPanels = await Promise.all(
     identity.keys.map(async (k) => {
       const p = parseKey(k.line);
       const bytes = await sha256(p.blob);
       const fp = fpString(bytes);
       const art = randomart(bytes, algoHeader(p.algo));
-      const meta = k.added ? `added ${esc(fmtDate(k.added))}` : "";
       const line = esc(k.line.trim());
-      return `<div class="card">
-        <div class="top">
-          <span class="badge">${esc(p.label)}</span>
-          <span class="klabel">${esc(k.label || p.comment || "key")}</span>
-          ${meta ? `<span class="kmeta">${meta}</span>` : ""}
-        </div>
-        <div class="body">
-          <div class="kinfo">
-            <div class="fp mono"><b>fingerprint</b> ${esc(fp)}</div>
-            ${p.comment ? `<div class="comment mono">${esc(p.comment)}</div>` : ""}
-            <div class="keyactions"><button class="mini" data-copy="${line}">copy public key</button></div>
+      return `<div class="key">
+        <div class="keyhd"><span class="badge">${esc(p.label)}</span><span class="kname">${esc(k.label || p.comment || "key")}</span>${k.added ? `<span class="kdate">added ${esc(fmtDate(k.added))}</span>` : ""}</div>
+        <div class="keybody">
+          <div class="kmain">
+            <dl class="spec"><dt>fingerprint</dt><dd><b>${esc(fp)}</b></dd>${p.comment ? `<dt>comment</dt><dd>${esc(p.comment)}</dd>` : ""}</dl>
+            <button class="copy" data-copy="${line}">copy key</button>
           </div>
-          <pre class="randomart mono">${esc(art)}</pre>
+          <pre class="art">${esc(art)}</pre>
         </div>
       </div>`;
     })
@@ -273,38 +210,40 @@ export async function renderIdentity(identity, origin, qrSvg = "") {
   const curl = `curl -fsSL ${url}.keys >> ~/.ssh/authorized_keys`;
   const install = `curl -fsSL ${url}.sh | sh`;
   const n = identity.keys.length;
-  const initial = esc((identity.name || identity.handle)[0].toUpperCase());
   const desc = `ssh public keys for ${identity.name}`;
 
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(identity.name)} · keys.hartforge.dev</title>
 <meta name="description" content="${esc(desc)}">
+<meta name="theme-color" content="#0f1113">
 <meta property="og:title" content="${esc(identity.name)} · keys.hartforge.dev">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary">
-<link rel="icon" href="/favicon.svg?v=1">
-<style>${STYLE}</style></head><body><div class="wrap">
-<header>
-  <div class="avatar">${initial}</div>
-  <div>
-    <h1>${esc(identity.name)}</h1>
-    <div class="handle mono">@${esc(identity.handle)}</div>
-    ${identity.tagline ? `<div class="tagline">${esc(identity.tagline)}</div>` : ""}
-  </div>
-</header>
-<div class="count">${n} public key${n === 1 ? "" : "s"}</div>
-${keyCards.join("\n")}
-<div class="usage">
-  <h2>install on a host</h2>
-  <p>idempotent sync — re-run anytime; adds new keys, removes revoked ones, never dupes</p>
-  <div class="cmd mono">${esc(install)}<button class="copy" data-copy="${esc(install)}">copy</button></div>
-  <h2 style="margin-top:18px">or append manually</h2>
-  <div class="cmd mono">${esc(curl)}<button class="copy" data-copy="${esc(curl)}">copy</button></div>
+<link rel="icon" href="/favicon.svg?v=2">
+<link rel="stylesheet" href="/hartforge.css">
+</head><body><div class="page">
+<div class="banner">
+  <a class="brand" href="https://hartforge.dev">${SPARK}<span class="wordmark">hart forge</span></a>
+  <span class="rev">keys</span>
 </div>
-${qrSvg ? `<div class="usage"><h2>raw keys</h2><p>scan for ${esc(url)}.keys</p><div class="qr">${qrSvg}</div></div>` : ""}
-<footer>keys.hartforge.dev · raw at <a href="${esc(url)}.keys">/${esc(identity.handle)}.keys</a> · installer at <a href="${esc(url)}.sh">/${esc(identity.handle)}.sh</a></footer>
+
+<div class="sec">
+  <div class="lbl">keys</div>
+  <div class="who"><h1>${esc(identity.name)}</h1><span class="handle">@${esc(identity.handle)}</span></div>
+  <div class="count">${n} public key${n === 1 ? "" : "s"} · authorized for ssh</div>
+  ${keyPanels.join("\n")}
+</div>
+
+<div class="sec">
+  <div class="lbl">install</div>
+  <div class="note">idempotent sync — re-run anytime; adds new keys, removes revoked ones, never dupes.</div>
+  <div class="cmd"><span class="sig">$</span> curl <span class="flag">-fsSL</span> ${esc(url)}.sh | sh<button class="cbtn" data-copy="${esc(install)}">copy</button></div>
+  <div class="cmd"><span class="sig">$</span> curl <span class="flag">-fsSL</span> ${esc(url)}.keys &gt;&gt; ~/.ssh/authorized_keys<button class="cbtn" data-copy="${esc(curl)}">copy</button></div>
+</div>
+
+<footer>keys.hartforge.dev · raw <a href="${esc(url)}.keys">/${esc(identity.handle)}.keys</a> · installer <a href="${esc(url)}.sh">/${esc(identity.handle)}.sh</a></footer>
 </div><script>${COPY_JS}</script></body></html>`;
 }

@@ -6,7 +6,7 @@ live at **https://keys.hartforge.dev**
 
 ## what it does
 
-- `keys.hartforge.dev/<handle>` -> identity page: key-type badges, live sha256 fingerprints, randomart, per-key copy, a qr to the raw endpoint
+- `keys.hartforge.dev/<handle>` -> identity page: key-type badges, live sha256 fingerprints, randomart, per-key copy. styled with the hart forge design system (`public/hartforge.css`)
 - `keys.hartforge.dev/<handle>.keys` -> raw pubkey lines, ready for authorized_keys
 - `keys.hartforge.dev/<handle>.sh` -> installer that syncs a managed block: re-run adds new keys, removes revoked ones, dedupes, echoes each key's fingerprint. keys outside the block are left alone
 
@@ -64,11 +64,10 @@ needs `CLOUDFLARE_API_TOKEN` (the pages-scoped token) and `CLOUDFLARE_ACCOUNT_ID
 functions/
   _identities.js   source of truth (edit this)
   _render.js       parsing, fingerprints, randomart, html
-  _qr.js           qr svg wrapper
-  _qrcodegen.js    vendored nayuki qr generator (MIT)
   [handle].js      /<handle>, /<handle>.keys, /<handle>.sh
   index.js         landing
 public/
+  hartforge.css    the hart forge design system (workshop) - shared tokens + components
   favicon.svg
 .github/workflows/deploy.yml
 wrangler.toml

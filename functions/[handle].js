@@ -1,7 +1,6 @@
 // serves /<handle> (identity page), /<handle>.keys (raw authorized_keys), /<handle>.sh (idempotent installer).
 import { getIdentity } from "./_identities.js";
 import { renderIdentity, rawKeys, installScript, htmlHeaders, textHeaders } from "./_render.js";
-import { qrSvg } from "./_qr.js";
 
 export async function onRequestGet(context) {
   const { params, request } = context;
@@ -25,7 +24,6 @@ export async function onRequestGet(context) {
       headers: textHeaders("text/x-shellscript; charset=utf-8"),
     });
 
-  const qr = qrSvg(`${origin}/${handle}.keys`);
-  const html = await renderIdentity(identity, origin, qr);
+  const html = await renderIdentity(identity, origin);
   return new Response(html, { headers: htmlHeaders() });
 }

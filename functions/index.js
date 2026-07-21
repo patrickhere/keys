@@ -1,47 +1,39 @@
-// landing page at / — lists the identities served here.
+// landing page at / — lists the identities served here. hart forge design system (workshop).
 import { identities } from "./_identities.js";
 import { htmlHeaders } from "./_render.js";
 
+const SPARK = `<svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0l2.1 9.9L24 12l-9.9 2.1L12 24l-2.1-9.9L0 12l9.9-2.1z" fill="#ff6a1f"/></svg>`;
+
 export function onRequestGet(context) {
-  const origin = new URL(context.request.url).origin;
   const rows = Object.values(identities)
-    .map(
-      (id) =>
-        `<a class="row" href="/${id.handle}">
-          <span class="av">${(id.name || id.handle)[0].toUpperCase()}</span>
-          <span class="nm">${escapeHtml(id.name)}<span class="hd">@${escapeHtml(id.handle)}</span></span>
-          <span class="ct">${id.keys.length} key${id.keys.length === 1 ? "" : "s"}</span>
-        </a>`
-    )
+    .map((id) => {
+      const n = id.keys.length;
+      return `<li><span class="arw">-&gt;</span><a href="/${escapeHtml(id.handle)}">${escapeHtml(id.name)}</a><span class="desc">@${escapeHtml(id.handle)} · ${n} key${n === 1 ? "" : "s"}</span></li>`;
+    })
     .join("\n");
 
   const html = `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>keys.hartforge.dev</title>
-<link rel="icon" href="/favicon.svg?v=1">
-<style>
-:root{color-scheme:dark light}
-body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  background:#0c0e12;color:#e6e6e6;min-height:100vh}
-.wrap{max-width:560px;margin:0 auto;padding:64px 20px}
-h1{font-size:20px;letter-spacing:-.01em;margin:0 0 4px}
-.sub{color:#8a94a6;font-size:13px;margin-bottom:28px}
-.sub b{color:#f0883e;font-weight:600}
-.row{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;
-  background:#14171d;border:1px solid #232830;border-radius:12px;padding:14px 16px;margin-bottom:10px}
-.row:hover{border-color:#f0883e}
-.av{width:40px;height:40px;border-radius:10px;flex:none;display:grid;place-items:center;
-  background:linear-gradient(135deg,#f0883e,#c2410c);color:#1a1200;font-weight:700}
-.nm{font-weight:600;display:flex;flex-direction:column}
-.hd{font-weight:400;color:#8a94a6;font-size:12.5px;font-family:ui-monospace,monospace}
-.ct{margin-left:auto;color:#6b7484;font-size:12.5px}
-@media(prefers-color-scheme:light){
-  body{background:#f7f8fa;color:#1a1d23}.row{background:#fff;border-color:#e4e7ec}
-}
-</style></head><body><div class="wrap">
-<h1>keys.hartforge.dev</h1>
-<div class="sub">ssh public key identities · fetch any with <b>curl ${escapeHtml(origin)}/&lt;handle&gt;.keys</b></div>
+<meta name="description" content="ssh public key identities for hart forge">
+<meta name="theme-color" content="#0f1113">
+<link rel="icon" href="/favicon.svg?v=2">
+<link rel="stylesheet" href="/hartforge.css">
+</head><body><div class="page">
+<div class="banner">
+  <a class="brand" href="https://hartforge.dev">${SPARK}<span class="wordmark">hart forge</span></a>
+  <span class="rev">keys</span>
+</div>
+<p class="tagline">ssh public key identities · curl any handle with /&lt;handle&gt;.keys</p>
+
+<div class="sec">
+  <div class="lbl">identities</div>
+  <ul class="rows">
 ${rows}
+  </ul>
+</div>
+
+<footer>keys.hartforge.dev · self-hosted on cloudflare pages</footer>
 </div></body></html>`;
 
   return new Response(html, { headers: htmlHeaders() });

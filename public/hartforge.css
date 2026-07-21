@@ -1,0 +1,127 @@
+/*
+  HART FORGE DESIGN SYSTEM · workshop
+  ------------------------------------------------------------------
+  color roles (semantic, not decorative):
+    coal/panel   grounds        iron         structural rule/border
+    steel        primary text   ash          secondary text
+    slag         muted / annotation / prompt glyphs
+    blueprint    STRUCTURE ONLY - labels, spec terms, art rule, kbd. never means "click".
+    ember        INTERACTIVE ONLY - hover, active accent. one static exception: the spark mark. never a status.
+    ok/warn/crit SEMANTIC status - patina / straw / red, the traffic-light set. separate from the brand accent.
+  links: no color of their own. steel text + blueprint underline; ember on hover.
+  type: 5 tokens (--fs-micro..display). spacing: 4px base (--sp-1..6). nothing off-scale.
+  canonical copy also lives in the shared design folder (hartforge-design/hartforge.css).
+*/
+:root{
+  --coal:#0f1113; --panel:#14171a; --iron:#2b2f33;
+  --steel:#e7eaec; --ash:#a3a9ad; --slag:#6b7075;
+  --blueprint:#6d90ac;      /* structure only */
+  --ember:#ff6a1f;          /* interactive only — hover, active. never a status. */
+  --ok:#6fae8c; --warn:#e6c667; --crit:#e5544a;   /* patina · straw · red */
+  --fs-micro:11px; --fs-small:12.5px; --fs-body:13.5px; --fs-head:15px; --fs-display:18px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+  --r:2px;
+  --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{color-scheme:dark}
+body{background:var(--coal); color:var(--steel); font-family:var(--mono);
+  font-size:var(--fs-body); line-height:1.55; -webkit-font-smoothing:antialiased}
+.page{max-width:680px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 64px}
+
+/* links — affordance, not colour */
+a{color:var(--steel); text-decoration:underline; text-decoration-color:var(--blueprint);
+  text-underline-offset:3px; text-decoration-thickness:1px}
+a:hover{color:var(--ember); text-decoration-color:var(--ember)}
+a:focus-visible{outline:2px solid var(--ember); outline-offset:2px; border-radius:1px}
+
+/* banner */
+.banner{display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3);
+  border:1px solid var(--iron); border-radius:var(--r); padding:var(--sp-3) var(--sp-4)}
+.bl{display:flex; align-items:center; gap:var(--sp-3)}
+.brand{display:flex; align-items:center; gap:var(--sp-3); text-decoration:none}
+.brand:hover .wordmark{color:var(--ember)}
+.spark{width:18px; height:18px; flex:none}          /* the one static ember */
+.wordmark{font-size:var(--fs-head); font-weight:700; letter-spacing:.30em; text-transform:uppercase; color:var(--steel)}
+.rev{font-size:var(--fs-micro); letter-spacing:.12em; text-transform:uppercase; color:var(--blueprint)}
+.live{display:inline-flex; align-items:center; gap:var(--sp-2); font-size:var(--fs-micro);
+  letter-spacing:.10em; text-transform:uppercase; color:var(--ash)}
+.live i{width:7px; height:7px; border-radius:50%; background:var(--ok)}   /* status = semantic */
+.tagline{color:var(--slag); font-size:var(--fs-small); margin:var(--sp-3) 0 0 2px}
+
+/* sections + bracketed labels */
+.sec{margin-top:var(--sp-6)}
+.lbl{font-size:var(--fs-micro); font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--blueprint);
+  border-bottom:1px solid var(--iron); padding-bottom:var(--sp-2); margin-bottom:var(--sp-4)}
+.lbl::before{content:"[ "; color:var(--slag)} .lbl::after{content:" ]"; color:var(--slag)}
+
+/* prompt/link rows (hub, identity list) */
+.rows{display:flex; flex-direction:column; gap:var(--sp-2); list-style:none}
+.rows li{display:grid; grid-template-columns:24px minmax(96px,auto) 1fr; gap:var(--sp-3); align-items:baseline}
+.rows .arw{color:var(--slag); white-space:nowrap}
+.rows .desc{color:var(--slag)}
+
+/* identity header */
+.who{display:flex; align-items:baseline; gap:var(--sp-3); margin-bottom:var(--sp-1)}
+.who h1{font-size:var(--fs-head); font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--steel)}
+.who .handle{color:var(--ash); font-size:var(--fs-small)}
+.count{color:var(--slag); font-size:var(--fs-small); margin-bottom:var(--sp-5)}
+
+/* key spec panels */
+.key{border:1px solid var(--iron); border-radius:var(--r); margin-bottom:var(--sp-3)}
+.keyhd{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; padding:var(--sp-2) var(--sp-4);
+  border-bottom:1px solid var(--iron); background:var(--panel)}
+.badge{font-size:var(--fs-micro); letter-spacing:.10em; text-transform:uppercase; color:var(--blueprint);
+  border:1px solid var(--iron); border-radius:var(--r); padding:0 var(--sp-2)}
+.kname{font-weight:700; letter-spacing:.08em; color:var(--steel)}
+.kdate{color:var(--slag); font-size:var(--fs-micro); margin-left:auto}
+.keybody{display:flex; gap:var(--sp-5); padding:var(--sp-3) var(--sp-4); flex-wrap:wrap}
+.kmain{flex:1 1 300px; min-width:0}
+.spec{display:grid; grid-template-columns:82px 1fr; gap:var(--sp-1) var(--sp-3); font-size:var(--fs-small)}
+.spec dt{color:var(--slag); text-transform:uppercase; letter-spacing:.08em; font-size:var(--fs-micro)}
+.spec dd{color:var(--ash); word-break:break-all; font-variant-numeric:tabular-nums}
+.spec dd b{color:var(--steel); font-weight:400}
+.art{color:var(--slag); font-size:10.5px; line-height:1.15; white-space:pre; margin:0;
+  border-left:2px solid var(--blueprint); padding-left:var(--sp-3)}
+.copy{margin-top:var(--sp-3); background:transparent; border:1px solid var(--iron); color:var(--ash);
+  font-family:var(--mono); font-size:var(--fs-micro); letter-spacing:.06em; text-transform:uppercase;
+  padding:var(--sp-1) var(--sp-3); border-radius:var(--r); cursor:pointer}
+.copy::before{content:"[ "; color:var(--slag)} .copy::after{content:" ]"; color:var(--slag)}
+.copy:hover{color:var(--ember); border-color:var(--ember)}
+.copy.ok{color:var(--ok); border-color:var(--ok)}
+.copy:focus-visible{outline:2px solid var(--ember); outline-offset:2px}
+
+/* command block */
+.cmd{position:relative; background:#0a0c0d; border:1px solid var(--iron); border-radius:var(--r);
+  padding:var(--sp-3) 64px var(--sp-3) var(--sp-4); font-size:var(--fs-small); color:var(--steel);
+  overflow-x:auto; margin-bottom:var(--sp-2)}
+.cmd .sig{color:var(--slag)} .cmd .flag{color:var(--blueprint)}
+.cmd .cbtn{position:absolute; top:var(--sp-2); right:var(--sp-2); background:transparent;
+  border:1px solid var(--iron); color:var(--ash); font-family:var(--mono); font-size:var(--fs-micro);
+  padding:2px var(--sp-2); border-radius:var(--r); cursor:pointer}
+.cmd .cbtn:hover{color:var(--ember); border-color:var(--ember)}
+.cmd .cbtn.ok{color:var(--ok); border-color:var(--ok)}
+.note{color:var(--slag); font-size:var(--fs-micro); margin-bottom:var(--sp-3)}
+
+/* prose / table / alerts — shared vocabulary */
+p.prose{color:var(--ash); font-size:var(--fs-small); line-height:1.7; max-width:60ch}
+table{width:100%; border-collapse:collapse; font-size:var(--fs-small)}
+th{text-align:left; color:var(--slag); text-transform:uppercase; letter-spacing:.08em; font-size:var(--fs-micro);
+  font-weight:400; border-bottom:1px solid var(--iron); padding:var(--sp-2) var(--sp-3) var(--sp-2) 0}
+td{color:var(--ash); border-bottom:1px solid var(--iron); padding:var(--sp-2) var(--sp-3) var(--sp-2) 0;
+  font-variant-numeric:tabular-nums}
+td.st{display:flex; align-items:center; gap:var(--sp-2)}
+td.st i{width:7px; height:7px; border-radius:50%}
+.up i{background:var(--ok)} .up{color:var(--steel)}
+.down i{background:var(--slag)} .down{color:var(--slag)}
+.alert{border:1px solid var(--iron); border-left-width:2px; border-radius:var(--r);
+  padding:var(--sp-3) var(--sp-4); font-size:var(--fs-small); color:var(--ash)}
+.alert b{font-weight:400}
+.alert.warn{border-left-color:var(--warn)} .alert.warn b{color:var(--warn)}
+.alert.crit{border-left-color:var(--crit)} .alert.crit b{color:var(--crit)}
+
+footer{margin-top:var(--sp-6); border-top:1px solid var(--iron); padding-top:var(--sp-4);
+  color:var(--slag); font-size:var(--fs-micro)}
+footer a{color:var(--ash)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
