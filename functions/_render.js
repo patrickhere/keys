@@ -165,12 +165,13 @@ h1{font-size:24px;margin:0;letter-spacing:-.01em}
 .fp{color:#a9b3c4;font-size:12.5px;word-break:break-all}
 .fp b{color:#e6e6e6;font-weight:600}
 .comment{color:#6b7484;font-size:12.5px;margin-top:4px}
-.artwrap{display:flex;gap:16px;align-items:center;margin-top:12px;flex-wrap:wrap}
-.randomart{font-size:11px;line-height:1.15;color:#7f8a9c;margin:0;white-space:pre;
+.body{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-top:12px}
+.kinfo{flex:1 1 300px;min-width:0}
+.randomart{font-size:10.5px;line-height:1.15;color:#6b7484;margin:0;white-space:pre;flex:0 0 auto;
   background:#0a0c10;border:1px solid #232830;border-radius:8px;padding:8px 10px}
 .qr{width:104px;height:104px;flex:none;background:#fff;border-radius:8px;padding:6px}
 .qr svg{display:block;width:100%;height:100%}
-.keyactions{margin-top:12px}
+.keyactions{margin-top:16px}
 .mini{background:#1c2129;border:1px solid #2e3542;color:#a9b3c4;border-radius:6px;
   padding:4px 10px;font-size:11.5px;cursor:pointer}
 .mini:hover{color:#fff;border-color:#f0883e}
@@ -226,10 +227,14 @@ export async function renderIdentity(identity, origin, qrSvg = "") {
           <span class="klabel">${esc(k.label || p.comment || "key")}</span>
           ${meta ? `<span class="kmeta">${meta}</span>` : ""}
         </div>
-        <div class="fp mono"><b>fingerprint</b> ${esc(fp)}</div>
-        ${p.comment ? `<div class="comment mono">${esc(p.comment)}</div>` : ""}
-        <div class="artwrap"><pre class="randomart mono">${esc(art)}</pre></div>
-        <div class="keyactions"><button class="mini" data-copy="${line}">copy public key</button></div>
+        <div class="body">
+          <div class="kinfo">
+            <div class="fp mono"><b>fingerprint</b> ${esc(fp)}</div>
+            ${p.comment ? `<div class="comment mono">${esc(p.comment)}</div>` : ""}
+            <div class="keyactions"><button class="mini" data-copy="${line}">copy public key</button></div>
+          </div>
+          <pre class="randomart mono">${esc(art)}</pre>
+        </div>
       </div>`;
     })
   );
