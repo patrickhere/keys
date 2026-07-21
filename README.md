@@ -1,0 +1,66 @@
+# keys
+
+self-hosted ssh public key identity pages, like sshid.io but ours. serves your authorized public keys at a curl-able endpoint plus a rendered identity page, on cloudflare pages.
+
+live at **https://keys.hartforge.dev**
+
+## what it does
+
+- `keys.hartforge.dev/<handle>` -> identity page: key-type badges, sha256 fingerprints computed live, copy-paste curl box
+- `keys.hartforge.dev/<handle>.keys` -> raw pubkey lines, ready for authorized_keys
+
+the point is one command to authorize all your devices on any box:
+
+```
+curl -fsSL https://keys.hartforge.dev/patrick.keys >> ~/.ssh/authorized_keys
+```
+
+only public keys live here. the private halves never leave your devices.
+
+## how it works
+
+- proxied CNAME `keys.hartforge.dev` -> `keys-f1y.pages.dev`, a cloudflare pages project
+- one pages function `functions/[handle].js` serves both routes (the `.keys` suffix branches to raw text; unknown handles fall through to a 404)
+- `functions/_render.js` computes the openssh sha256 fingerprint in the worker runtime (webcrypto sha-256 over the decoded key blob, base64, strip padding - matches `ssh-keygen -lf` exactly), so you never hand-maintain fingerprints
+- `functions/_identities.js` is the only file you edit to add people or keys
+
+## add a device / key
+
+1. on the device, grab its public key:
+   ```
+   cat ~/.ssh/id_ed25519.pub      # or generate one: ssh-keygen -t ed25519
+   ```
+2. paste the line into `functions/_identities.js` under the right handle:
+   ```js
+   {
+     line: "ssh-ed25519 AAAA... you@device",
+     label: "patricks-newbox",
+     added: "07-21-2026",           // mm-dd-yyyy
+   },
+   ```
+3. deploy (below). fingerprint, badge and date render automatically.
+
+## add a person
+
+add a new handle to the `identities` object in `functions/_identities.js` with a `name`, `handle` and `keys` list. they get their own `/handle` page and `/handle.keys` endpoint.
+
+## deploy
+
+```
+npx wrangler pages deploy public --project-name keys --branch main --commit-dirty=true
+```
+
+needs `CLOUDFLARE_API_TOKEN` (the pages-scoped token) and `CLOUDFLARE_ACCOUNT_ID` in the env. edge cache is 5 min, so the live page lags a redeploy briefly - the unique deployment url is instant.
+
+## layout
+
+```
+functions/
+  _identities.js   source of truth (edit this)
+  _render.js       parsing, fingerprints, html
+  [handle].js      /<handle> and /<handle>.keys
+  index.js         landing
+public/
+  favicon.svg
+wrangler.toml
+```

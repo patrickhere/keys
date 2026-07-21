@@ -1,0 +1,7 @@
+{
+  "name": "keys",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ssh public key identity pages for hartforge.dev"
+}
