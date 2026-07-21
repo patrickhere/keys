@@ -6,13 +6,15 @@ live at **https://keys.hartforge.dev**
 
 ## what it does
 
-- `keys.hartforge.dev/<handle>` -> identity page: key-type badges, sha256 fingerprints computed live, copy-paste curl box
+- `keys.hartforge.dev/<handle>` -> identity page: key-type badges, live sha256 fingerprints, randomart, per-key copy, a qr to the raw endpoint
 - `keys.hartforge.dev/<handle>.keys` -> raw pubkey lines, ready for authorized_keys
+- `keys.hartforge.dev/<handle>.sh` -> idempotent installer, safe to re-run
 
 the point is one command to authorize all your devices on any box:
 
 ```
-curl -fsSL https://keys.hartforge.dev/patrick.keys >> ~/.ssh/authorized_keys
+curl -fsSL https://keys.hartforge.dev/patrick.sh | sh          # idempotent, recommended
+curl -fsSL https://keys.hartforge.dev/patrick.keys >> ~/.ssh/authorized_keys   # plain append
 ```
 
 only public keys live here. the private halves never leave your devices.
@@ -46,6 +48,10 @@ add a new handle to the `identities` object in `functions/_identities.js` with a
 
 ## deploy
 
+push to forgejo -> it mirrors to github -> the `deploy` github action runs `wrangler pages deploy`. that's it. edit `functions/_identities.js`, `git push`, done.
+
+to deploy by hand:
+
 ```
 npx wrangler pages deploy public --project-name keys --branch main --commit-dirty=true
 ```
@@ -57,10 +63,13 @@ needs `CLOUDFLARE_API_TOKEN` (the pages-scoped token) and `CLOUDFLARE_ACCOUNT_ID
 ```
 functions/
   _identities.js   source of truth (edit this)
-  _render.js       parsing, fingerprints, html
-  [handle].js      /<handle> and /<handle>.keys
+  _render.js       parsing, fingerprints, randomart, html
+  _qr.js           qr svg wrapper
+  _qrcodegen.js    vendored nayuki qr generator (MIT)
+  [handle].js      /<handle>, /<handle>.keys, /<handle>.sh
   index.js         landing
 public/
   favicon.svg
+.github/workflows/deploy.yml
 wrangler.toml
 ```

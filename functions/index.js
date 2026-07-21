@@ -1,5 +1,6 @@
 // landing page at / — lists the identities served here.
 import { identities } from "./_identities.js";
+import { htmlHeaders } from "./_render.js";
 
 export function onRequestGet(context) {
   const origin = new URL(context.request.url).origin;
@@ -43,9 +44,7 @@ h1{font-size:20px;letter-spacing:-.01em;margin:0 0 4px}
 ${rows}
 </div></body></html>`;
 
-  return new Response(html, {
-    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300" },
-  });
+  return new Response(html, { headers: htmlHeaders() });
 }
 
 function escapeHtml(s) {

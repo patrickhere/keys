@@ -1,4 +1,4 @@
-// key parsing, fingerprinting, and html rendering. no external deps, runs on the workers runtime.
+// key parsing, fingerprinting, randomart, and html rendering. no external deps, runs on the workers runtime.
 
 const ALGO_LABELS = {
   "ssh-ed25519": "ed25519",
@@ -20,15 +20,68 @@ export function parseKey(line) {
   return { algo, blob, comment, label: ALGO_LABELS[algo] || algo };
 }
 
-// openssh-style SHA256 fingerprint: base64(sha256(raw key blob)), no padding.
-export async function fingerprint(blob) {
+// raw sha256 digest bytes of the key blob.
+async function sha256(blob) {
   const raw = Uint8Array.from(atob(blob), (c) => c.charCodeAt(0));
-  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", raw));
-  const b64 = btoa(String.fromCharCode(...digest)).replace(/=+$/, "");
-  return "SHA256:" + b64;
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", raw));
 }
 
-// dates are authored mm-dd-yyyy (user-facing format); pass through as-is.
+// openssh-style SHA256 fingerprint: base64(digest), no padding.
+function fpString(bytes) {
+  return "SHA256:" + btoa(String.fromCharCode(...bytes)).replace(/=+$/, "");
+}
+
+export async function fingerprint(blob) {
+  return fpString(await sha256(blob));
+}
+
+// header shown on the randomart border, e.g. "ED25519 256".
+function algoHeader(algo) {
+  if (algo === "ssh-ed25519") return "ED25519 256";
+  if (algo === "ssh-rsa") return "RSA";
+  if (algo === "ssh-dss") return "DSA";
+  if (algo.startsWith("ecdsa-sha2-nistp")) return "ECDSA " + algo.slice(-3);
+  if (algo.startsWith("sk-ssh-ed25519")) return "ED25519-SK 256";
+  if (algo.startsWith("sk-ecdsa")) return "ECDSA-SK 256";
+  return algo.toUpperCase();
+}
+
+// drunken-bishop randomart from the sha256 digest, matching `ssh-keygen -lv`.
+function randomart(bytes, header) {
+  const X = 17, Y = 9, aug = " .o+=*BOX@%&#/^SE";
+  const len = aug.length - 1; // 16
+  const field = Array.from({ length: X }, () => new Array(Y).fill(0));
+  let x = X >> 1, y = Y >> 1;
+  for (let i = 0; i < bytes.length; i++) {
+    let inp = bytes[i];
+    for (let b = 0; b < 4; b++) {
+      x += inp & 1 ? 1 : -1;
+      y += inp & 2 ? 1 : -1;
+      x = Math.max(0, Math.min(X - 1, x));
+      y = Math.max(0, Math.min(Y - 1, y));
+      if (field[x][y] < len - 2) field[x][y]++;
+      inp >>= 2;
+    }
+  }
+  field[X >> 1][Y >> 1] = len - 1; // 'S'
+  field[x][y] = len; // 'E'
+  const border = (label) => {
+    const tag = label ? "[" + label + "]" : "";
+    if (tag.length >= X) return "+" + tag.slice(0, X) + "+";
+    const pad = X - tag.length, l = pad >> 1;
+    return "+" + "-".repeat(l) + tag + "-".repeat(pad - l) + "+";
+  };
+  const rows = [border(header)];
+  for (let j = 0; j < Y; j++) {
+    let row = "|";
+    for (let i = 0; i < X; i++) row += aug[field[i][j]];
+    rows.push(row + "|");
+  }
+  rows.push(border("SHA256"));
+  return rows.join("\n");
+}
+
+// mm-dd-yyyy authored dates (user-facing); pass through as-is.
 function fmtDate(d) {
   return d || "";
 }
@@ -42,6 +95,51 @@ function esc(s) {
 // the raw text served at /<handle>.keys — one pubkey line each, ready for authorized_keys.
 export function rawKeys(identity) {
   return identity.keys.map((k) => k.line.trim()).join("\n") + "\n";
+}
+
+// the idempotent installer served at /<handle>.sh — safe to curl | sh repeatedly.
+export function installScript(identity, origin) {
+  const body = identity.keys.map((k) => k.line.trim()).join("\n");
+  return `#!/bin/sh
+# ${identity.name} — install ssh public keys into authorized_keys (idempotent, safe to re-run)
+# source: ${origin}/${identity.handle}
+set -eu
+mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+AK="$HOME/.ssh/authorized_keys"
+touch "$AK" && chmod 600 "$AK"
+added=0
+while IFS= read -r key; do
+  [ -z "$key" ] && continue
+  if ! grep -qxF "$key" "$AK"; then
+    printf '%s\\n' "$key" >> "$AK"
+    added=$((added + 1))
+  fi
+done <<'KEYS'
+${body}
+KEYS
+echo "${identity.handle}: added $added new key(s); authorized_keys now has $(grep -c '.' "$AK") entries"
+`;
+}
+
+// security headers applied to every response.
+export const SEC_HEADERS = {
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+  "x-frame-options": "DENY",
+};
+
+export function htmlHeaders() {
+  return {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "public, max-age=300",
+    "content-security-policy":
+      "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'",
+    ...SEC_HEADERS,
+  };
+}
+
+export function textHeaders(ct) {
+  return { "content-type": ct, "cache-control": "public, max-age=300", ...SEC_HEADERS };
 }
 
 const STYLE = `
@@ -67,10 +165,21 @@ h1{font-size:24px;margin:0;letter-spacing:-.01em}
 .fp{color:#a9b3c4;font-size:12.5px;word-break:break-all}
 .fp b{color:#e6e6e6;font-weight:600}
 .comment{color:#6b7484;font-size:12.5px;margin-top:4px}
+.artwrap{display:flex;gap:16px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.randomart{font-size:11px;line-height:1.15;color:#7f8a9c;margin:0;white-space:pre;
+  background:#0a0c10;border:1px solid #232830;border-radius:8px;padding:8px 10px}
+.qr{width:104px;height:104px;flex:none;background:#fff;border-radius:8px;padding:6px}
+.qr svg{display:block;width:100%;height:100%}
+.keyactions{margin-top:12px}
+.mini{background:#1c2129;border:1px solid #2e3542;color:#a9b3c4;border-radius:6px;
+  padding:4px 10px;font-size:11.5px;cursor:pointer}
+.mini:hover{color:#fff;border-color:#f0883e}
+.mini.ok{color:#6ee787;border-color:#6ee787}
 .usage{margin-top:32px;background:#0f1319;border:1px solid #232830;border-radius:12px;padding:18px}
-.usage h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#8a94a6;margin:0 0 12px}
+.usage h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#8a94a6;margin:0 0 6px}
+.usage p{color:#6b7484;font-size:12.5px;margin:0 0 12px}
 .cmd{position:relative;background:#0a0c10;border:1px solid #232830;border-radius:8px;
-  padding:12px 44px 12px 14px;font-size:12.5px;color:#cdd5e0;overflow-x:auto;margin-bottom:10px}
+  padding:12px 60px 12px 14px;font-size:12.5px;color:#cdd5e0;overflow-x:auto;margin-bottom:10px}
 .cmd:last-child{margin-bottom:0}
 .copy{position:absolute;top:8px;right:8px;background:#1c2129;border:1px solid #2e3542;color:#a9b3c4;
   border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer}
@@ -82,15 +191,16 @@ a{color:#f0883e}
   body{background:#f7f8fa;color:#1a1d23}
   .card{background:#fff;border-color:#e4e7ec}
   .usage{background:#fff;border-color:#e4e7ec}
-  .cmd{background:#f2f3f6;border-color:#e4e7ec;color:#333}
-  .handle,.kmeta,.comment,.count{color:#6b7484}
+  .cmd,.randomart{background:#f2f3f6;border-color:#e4e7ec;color:#333}
+  .randomart{color:#5b6473}
+  .handle,.kmeta,.comment,.count,.usage p{color:#6b7484}
   .fp{color:#3a4150}.fp b{color:#1a1d23}
-  .copy{background:#eef0f3;border-color:#d8dce2}
+  .copy,.mini{background:#eef0f3;border-color:#d8dce2}
 }
 `;
 
 const COPY_JS = `
-document.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',()=>{
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{
   navigator.clipboard.writeText(b.dataset.copy).then(()=>{
     const t=b.textContent;b.textContent='copied';b.classList.add('ok');
     setTimeout(()=>{b.textContent=t;b.classList.remove('ok')},1200);
@@ -98,33 +208,47 @@ document.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',()=>{
 }));
 `;
 
-export async function renderIdentity(identity, origin) {
+// qrSvg is injected by the caller (built in [handle].js from _qr.js) so this module
+// stays dependency-light; pass "" to omit.
+export async function renderIdentity(identity, origin, qrSvg = "") {
   const url = `${origin}/${identity.handle}`;
   const keyCards = await Promise.all(
     identity.keys.map(async (k) => {
       const p = parseKey(k.line);
-      const fp = await fingerprint(p.blob);
-      const meta = [k.added && fmtDate(k.added)].filter(Boolean).join("");
+      const bytes = await sha256(p.blob);
+      const fp = fpString(bytes);
+      const art = randomart(bytes, algoHeader(p.algo));
+      const meta = k.added ? `added ${esc(fmtDate(k.added))}` : "";
+      const line = esc(k.line.trim());
       return `<div class="card">
         <div class="top">
           <span class="badge">${esc(p.label)}</span>
           <span class="klabel">${esc(k.label || p.comment || "key")}</span>
-          ${meta ? `<span class="kmeta">added ${esc(meta)}</span>` : ""}
+          ${meta ? `<span class="kmeta">${meta}</span>` : ""}
         </div>
         <div class="fp mono"><b>fingerprint</b> ${esc(fp)}</div>
         ${p.comment ? `<div class="comment mono">${esc(p.comment)}</div>` : ""}
+        <div class="artwrap"><pre class="randomart mono">${esc(art)}</pre></div>
+        <div class="keyactions"><button class="mini" data-copy="${line}">copy public key</button></div>
       </div>`;
     })
   );
 
   const curl = `curl -fsSL ${url}.keys >> ~/.ssh/authorized_keys`;
+  const install = `curl -fsSL ${url}.sh | sh`;
   const n = identity.keys.length;
   const initial = esc((identity.name || identity.handle)[0].toUpperCase());
+  const desc = `ssh public keys for ${identity.name}`;
 
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(identity.name)} · keys.hartforge.dev</title>
-<meta name="description" content="ssh public keys for ${esc(identity.name)}">
+<meta name="description" content="${esc(desc)}">
+<meta property="og:title" content="${esc(identity.name)} · keys.hartforge.dev">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${esc(url)}">
+<meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.svg?v=1">
 <style>${STYLE}</style></head><body><div class="wrap">
 <header>
@@ -138,10 +262,13 @@ export async function renderIdentity(identity, origin) {
 <div class="count">${n} public key${n === 1 ? "" : "s"}</div>
 ${keyCards.join("\n")}
 <div class="usage">
-  <h2>authorize these keys on a host</h2>
+  <h2>install on a host</h2>
+  <p>idempotent — safe to re-run, never duplicates a key</p>
+  <div class="cmd mono">${esc(install)}<button class="copy" data-copy="${esc(install)}">copy</button></div>
+  <h2 style="margin-top:18px">or append manually</h2>
   <div class="cmd mono">${esc(curl)}<button class="copy" data-copy="${esc(curl)}">copy</button></div>
-  <div class="cmd mono">${esc(url + ".keys")}<button class="copy" data-copy="${esc(url + ".keys")}">copy</button></div>
 </div>
-<footer>keys.hartforge.dev · raw keys at <a href="${esc(url)}.keys">/${esc(identity.handle)}.keys</a></footer>
+${qrSvg ? `<div class="usage"><h2>raw keys</h2><p>scan for ${esc(url)}.keys</p><div class="qr">${qrSvg}</div></div>` : ""}
+<footer>keys.hartforge.dev · raw at <a href="${esc(url)}.keys">/${esc(identity.handle)}.keys</a> · installer at <a href="${esc(url)}.sh">/${esc(identity.handle)}.sh</a></footer>
 </div><script>${COPY_JS}</script></body></html>`;
 }
