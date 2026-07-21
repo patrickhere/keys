@@ -97,27 +97,58 @@ export function rawKeys(identity) {
   return identity.keys.map((k) => k.line.trim()).join("\n") + "\n";
 }
 
-// the idempotent installer served at /<handle>.sh — safe to curl | sh repeatedly.
-export function installScript(identity, origin) {
+// the installer served at /<handle>.sh — syncs a managed block, safe to curl | sh repeatedly.
+// re-running adds new keys AND removes revoked ones (anything dropped upstream), while
+// leaving keys outside the block untouched. echoes each key's fingerprint for confirmation.
+export async function installScript(identity, origin) {
+  const marker = `keys.hartforge.dev/${identity.handle}`;
   const body = identity.keys.map((k) => k.line.trim()).join("\n");
+  const summary = await Promise.all(
+    identity.keys.map(async (k) => {
+      const p = parseKey(k.line);
+      const fp = fpString(await sha256(p.blob));
+      const name = k.label || p.comment || p.label;
+      return `echo "  ${fp}  ${name}"`;
+    })
+  );
   return `#!/bin/sh
-# ${identity.name} — install ssh public keys into authorized_keys (idempotent, safe to re-run)
+# ${identity.name} — sync ssh public keys into authorized_keys (managed block, idempotent)
 # source: ${origin}/${identity.handle}
+# re-run anytime: adds new keys, removes revoked ones, never duplicates.
 set -eu
 mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
 AK="$HOME/.ssh/authorized_keys"
 touch "$AK" && chmod 600 "$AK"
-added=0
-while IFS= read -r key; do
-  [ -z "$key" ] && continue
-  if ! grep -qxF "$key" "$AK"; then
-    printf '%s\\n' "$key" >> "$AK"
-    added=$((added + 1))
-  fi
-done <<'KEYS'
+BEGIN="# >>> ${marker} >>>"
+END="# <<< ${marker} <<<"
+
+KEYS_TMP="$HOME/.ssh/.keys.$$"
+cat > "$KEYS_TMP" <<'KEYS'
 ${body}
 KEYS
-echo "${identity.handle}: added $added new key(s); authorized_keys now has $(grep -c '.' "$AK") entries"
+
+# rebuild authorized_keys: drop the old managed block and any stray copies of these keys,
+# keep everything else, then append a fresh block. this is what enables revocation.
+AK_TMP="$AK.sync.$$"
+awk -v b="$BEGIN" -v e="$END" '
+  FNR==NR { if ($0 != "") managed[$0]=1; next }
+  $0==b { skip=1; next }
+  $0==e { skip=0; next }
+  skip==1 { next }
+  ($0 in managed) { next }
+  { print }
+' "$KEYS_TMP" "$AK" > "$AK_TMP"
+{
+  echo "$BEGIN"
+  cat "$KEYS_TMP"
+  echo "$END"
+} >> "$AK_TMP"
+rm -f "$KEYS_TMP"
+mv "$AK_TMP" "$AK"
+chmod 600 "$AK"
+
+echo "${identity.handle}: synced ${identity.keys.length} key(s) into authorized_keys:"
+${summary.join("\n")}
 `;
 }
 
@@ -268,7 +299,7 @@ export async function renderIdentity(identity, origin, qrSvg = "") {
 ${keyCards.join("\n")}
 <div class="usage">
   <h2>install on a host</h2>
-  <p>idempotent — safe to re-run, never duplicates a key</p>
+  <p>idempotent sync — re-run anytime; adds new keys, removes revoked ones, never dupes</p>
   <div class="cmd mono">${esc(install)}<button class="copy" data-copy="${esc(install)}">copy</button></div>
   <h2 style="margin-top:18px">or append manually</h2>
   <div class="cmd mono">${esc(curl)}<button class="copy" data-copy="${esc(curl)}">copy</button></div>

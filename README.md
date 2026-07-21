@@ -8,7 +8,7 @@ live at **https://keys.hartforge.dev**
 
 - `keys.hartforge.dev/<handle>` -> identity page: key-type badges, live sha256 fingerprints, randomart, per-key copy, a qr to the raw endpoint
 - `keys.hartforge.dev/<handle>.keys` -> raw pubkey lines, ready for authorized_keys
-- `keys.hartforge.dev/<handle>.sh` -> idempotent installer, safe to re-run
+- `keys.hartforge.dev/<handle>.sh` -> installer that syncs a managed block: re-run adds new keys, removes revoked ones, dedupes, echoes each key's fingerprint. keys outside the block are left alone
 
 the point is one command to authorize all your devices on any box:
 

@@ -21,7 +21,7 @@ export async function onRequestGet(context) {
   if (kind === "keys")
     return new Response(rawKeys(identity), { headers: textHeaders("text/plain; charset=utf-8") });
   if (kind === "sh")
-    return new Response(installScript(identity, origin), {
+    return new Response(await installScript(identity, origin), {
       headers: textHeaders("text/x-shellscript; charset=utf-8"),
     });
 
