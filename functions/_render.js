@@ -217,11 +217,20 @@ export async function renderIdentity(identity, origin) {
 <title>${esc(identity.name)} · keys.hartforge.dev</title>
 <meta name="description" content="${esc(desc)}">
 <meta name="theme-color" content="#0f1113">
+<link rel="canonical" href="${esc(url)}">
 <meta property="og:title" content="${esc(identity.name)} · keys.hartforge.dev">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${esc(url)}">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="${esc(origin)}/og/${esc(identity.handle)}.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="${esc(desc)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(identity.name)} · keys.hartforge.dev">
+<meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="${esc(origin)}/og/${esc(identity.handle)}.png">
 <link rel="icon" href="/favicon.svg?v=2">
 <link rel="stylesheet" href="/hartforge.css">
 </head><body><div class="page">
