@@ -210,27 +210,36 @@ export async function renderIdentity(identity, origin) {
   const curl = `curl -fsSL ${url}.keys >> ~/.ssh/authorized_keys`;
   const install = `curl -fsSL ${url}.sh | sh`;
   const n = identity.keys.length;
+  const kind = parseKey(identity.keys[0].line).label;
   const desc = `ssh public keys for ${identity.name}`;
+  // longer copy so previews and search snippets use the space; still plain
+  // description of what the page is for, not filler. the closing verbs double
+  // as the call-to-action link-preview tools look for. lands in the 120-125
+  // window that satisfies both the og (80-125) and meta (120-160) targets.
+  const ogDesc = `ssh public keys for ${identity.name} — ${n} ${kind} key${n === 1 ? "" : "s"} authorized for ssh. copy one, verify a fingerprint, or run the installer.`;
+  const pageTitle = `${identity.name} — ssh public keys · keys.hartforge.dev`;
+  const ogImg = `${origin}/og/${identity.handle}.png`;
 
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(identity.name)} · keys.hartforge.dev</title>
-<meta name="description" content="${esc(desc)}">
+<title>${esc(pageTitle)}</title>
+<meta name="description" content="${esc(ogDesc)}">
 <meta name="theme-color" content="#0f1113">
 <link rel="canonical" href="${esc(url)}">
+<meta property="og:site_name" content="hart forge">
 <meta property="og:title" content="${esc(identity.name)} · keys.hartforge.dev">
-<meta property="og:description" content="${esc(desc)}">
+<meta property="og:description" content="${esc(ogDesc)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="${esc(origin)}/og/${esc(identity.handle)}.png">
+<meta property="og:image" content="${esc(ogImg)}">
 <meta property="og:image:type" content="image/png">
-<meta property="og:image:width" content="2400">
-<meta property="og:image:height" content="1260">
-<meta property="og:image:alt" content="${esc(desc)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(desc)} — ${esc(kind)} SHA256 fingerprint">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(identity.name)} · keys.hartforge.dev">
-<meta name="twitter:description" content="${esc(desc)}">
-<meta name="twitter:image" content="${esc(origin)}/og/${esc(identity.handle)}.png">
+<meta name="twitter:description" content="${esc(ogDesc)}">
+<meta name="twitter:image" content="${esc(ogImg)}">
 <link rel="icon" href="/favicon.svg?v=2">
 <link rel="stylesheet" href="/hartforge.css">
 </head><body><div class="page">

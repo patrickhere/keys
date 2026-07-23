@@ -73,7 +73,7 @@ for (const id of Object.values(identities)) {
   const out = join(OUTDIR, `${id.handle}.png`);
   execFileSync(
     CHROME,
-    ["--headless", "--disable-gpu", "--force-device-scale-factor=2",
+    ["--headless", "--disable-gpu", "--force-device-scale-factor=1",
      "--hide-scrollbars", "--window-size=1200,630",
      `--screenshot=${out}`, `file://${tmp}`],
     { stdio: "ignore" }
