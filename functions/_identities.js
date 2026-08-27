@@ -19,6 +19,11 @@ export const identities = {
         label: "patricks-mbp",
         added: "07-21-2026",
       },
+      {
+        line: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHcwz3Qo0mmDtJ4TZ3enUn+PFDo4CNJ1p0tOyxwFmY9l patrick@patricks-pc",
+        label: "patricks-pc",
+        added: "08-27-2026",
+      },
     ],
   },
 };
