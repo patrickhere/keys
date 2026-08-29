@@ -20,9 +20,9 @@ export const identities = {
         added: "07-21-2026",
       },
       {
-        line: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHcwz3Qo0mmDtJ4TZ3enUn+PFDo4CNJ1p0tOyxwFmY9l patrick@patricks-pc",
+        line: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDfqUs9CjzeRGxGfdoif4LOEI7DhZNjzZ6n1t0voQct7 patrick@patricks-pc",
         label: "patricks-pc",
-        added: "08-27-2026",
+        added: "08-28-2026",
       },
     ],
   },
